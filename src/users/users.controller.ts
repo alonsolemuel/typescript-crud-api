@@ -9,7 +9,8 @@ import { userService } from './user.service';
 
 const router = Router();
 
-// 🔐 ROUTES
+// ROUTES
+router.post('/authenticate', authenticateSchema, authenticate);
 router.get('/', getAll);
 router.get('/:id', getById);
 router.post('/', createSchema, create);
@@ -18,7 +19,12 @@ router.delete('/:id', _delete);
 
 export default router;
 
-// 🔧 ROUTE HANDLERS (typed)
+function authenticate(req: Request, res: Response, next: NextFunction): void {
+  userService.authenticate(req.body)
+    .then((user) => res.json(user))
+    .catch(next);
+}
+
 function getAll(req: Request, res: Response, next: NextFunction): void {
   userService.getAll()
     .then((users) => res.json(users))
@@ -49,7 +55,15 @@ function _delete(req: Request, res: Response, next: NextFunction): void {
     .catch(next);
 }
 
-// ✅ VALIDATION SCHEMAS
+function authenticateSchema(req: Request, res: Response, next: NextFunction): void {
+  const schema = Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().required()
+  });
+
+  validateRequest(req, next, schema);
+}
+
 function createSchema(req: Request, res: Response, next: NextFunction): void {
   const schema = Joi.object({
     title: Joi.string().required(),

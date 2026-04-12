@@ -1,16 +1,48 @@
 // src/users/user.service.ts
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import config from '../../config.json';
+
 import { db } from '../_helpers/db';
 import { Role } from '../_helpers/role';
 import { User, UserCreationAttributes } from './user.model';
 
 export const userService = {
+  authenticate,
   getAll,
   getById,
   create,
   update,
   delete: _delete,
 };
+
+async function authenticate(params: { email: string; password: string }) {
+  const user = await db.User.scope('withHash').findOne({
+    where: { email: params.email }
+  });
+
+  if (!user) {
+    throw new Error('Email or password is incorrect');
+  }
+
+  const isMatch = await bcrypt.compare(params.password, user.passwordHash);
+  if (!isMatch) {
+    throw new Error('Email or password is incorrect');
+  }
+
+  const token = jwt.sign(
+    { sub: user.id, role: user.role },
+    config.jwtSecret,
+    { expiresIn: '1d' }
+  );
+
+  const plainUser = user.get();
+
+  return {
+    ...plainUser,
+    token
+  };
+}
 
 async function getAll(): Promise<User[]> {
   return await db.User.findAll();
@@ -21,20 +53,17 @@ async function getById(id: number): Promise<User> {
 }
 
 async function create(params: UserCreationAttributes & { password: string }): Promise<void> {
-  // Check if email already exists
   const existingUser = await db.User.findOne({ where: { email: params.email } });
   if (existingUser) {
     throw new Error(`Email "${params.email}" is already registered`);
   }
 
-  // Hash password
   const passwordHash = await bcrypt.hash(params.password, 10);
 
-  // Create user (exclude password from saved fields)
   await db.User.create({
     ...params,
     passwordHash,
-    role: params.role || Role.User, // Default to User role
+    role: params.role || Role.User
   } as UserCreationAttributes);
 }
 
@@ -44,13 +73,11 @@ async function update(
 ): Promise<void> {
   const user = await getUser(id);
 
-  // Hash new password if provided
   if (params.password) {
     (params as any).passwordHash = await bcrypt.hash(params.password, 10);
-    delete (params as any).password; // Remove plain password
+    delete (params as any).password;
   }
 
-  // Update user
   await user.update(params as Partial<UserCreationAttributes>);
 }
 
@@ -59,7 +86,6 @@ async function _delete(id: number): Promise<void> {
   await user.destroy();
 }
 
-// Helper: Get user or throw error
 async function getUser(id: number): Promise<User> {
   const user = await db.User.scope('withHash').findByPk(id);
   if (!user) {

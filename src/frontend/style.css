@@ -1,0 +1,16 @@
+.page { display: none; }
+.page.active { display: block; }
+
+body.not-authenticated .role-logged-in { display: none; }
+body.authenticated .role-logged-out { display: none; }
+
+.role-admin { display: none; }
+body.is-admin .role-admin { display: block; }
+
+.form-box {
+    max-width: 450px;
+    border: 1px solid #dee2e6;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 4px;
+}
