@@ -34,7 +34,7 @@ TypeScript · Node.js · Express · Sequelize · MySQL · Joi · JWT · bcryptjs
 **Requirements:** Node.js 18+, MySQL
 
 ```bash
-git clone https://github.com/Aya12234567/typescript-crud-api.git
+git clone https://github.com/alonsolemuel/typescript-crud-api.git
 cd typescript-crud-api
 npm install
 ```
